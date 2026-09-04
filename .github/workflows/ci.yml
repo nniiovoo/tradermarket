@@ -34,6 +34,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # The service reads compiled ABIs and bytecode out of contracts/out —
+      # src/indexer/abi.mjs does, and the tests import it — so the contracts
+      # have to be built before the suite runs. A developer's machine usually
+      # has out/ lying around from an earlier build, which is exactly why this
+      # was missed locally and only failed on a clean checkout.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+      - name: Build contracts, whose artifacts the service loads
+        working-directory: contracts
+        run: forge build
       - uses: actions/setup-node@v4
         with:
           node-version: '24.14'

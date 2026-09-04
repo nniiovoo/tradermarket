@@ -32,6 +32,10 @@ cd services/live-room      && npm ci && npm test
 cd prototype/live-market-app && npm ci && npm test
 ```
 
+Run them in that order. The backend suite loads compiled ABIs and bytecode from
+`contracts/out` (see `services/live-room/src/indexer/abi.mjs`), so `forge build`
+has to have run first — on a fresh clone it has not.
+
 The frontend's `npm test` builds first, because one test asserts on the packaged
 output. A fresh clone has no `dist/`.
 
