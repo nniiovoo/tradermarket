@@ -81,6 +81,12 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
         with:
           version: v1.7.1
+      # All three tiers deploy real contracts and load their bytecode from
+      # contracts/out. README says so; CI did not do it, and the first public
+      # run died on a missing MockUSDC artifact.
+      - name: Build contracts, whose bytecode the game day deploys
+        working-directory: contracts
+        run: forge build
       - uses: actions/setup-node@v4
         with:
           node-version: '24.14'
