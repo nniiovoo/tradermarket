@@ -1,0 +1,90 @@
+{
+  "room_id": "gameday",
+  "session_start_ms": 1700000000000,
+  "epoch_duration_s": 10,
+  "finality_delay_s": 10,
+  "announce_delay_s": 30,
+  "max_pending_time_s": 90,
+  "freshness_threshold_ms": 25000,
+  "headline_target": "10000",
+  "participants": [
+    { "key": "alice", "address": "0xAAA0000000000000000000000000000000000001" },
+    { "key": "bob", "address": "0xBBB0000000000000000000000000000000000002" }
+  ],
+  "gap_start_s": 120,
+  "heartbeat_gap_s": 40,
+  "session_length_s": 300,
+  "micro_slots": [
+    {
+      "question": "Will Bob's return exceed 2%?",
+      "template_id": "tpl-threshold-v1",
+      "params": { "participant": "bob", "metric": "return_pct", "operator": ">=", "value": "2" }
+    },
+    {
+      "question": "Will Alice clear $6,000 realized?",
+      "template_id": "tpl-threshold-v1",
+      "params": { "participant": "alice", "metric": "realized_pnl_usd", "operator": ">=", "value": "6000" }
+    },
+    {
+      "question": "Who reaches $50,000 profit first?",
+      "template_id": "tpl-race-v1",
+      "params": { "metric": "realized_pnl_usd", "operator": ">=", "value": "50000" }
+    }
+  ],
+  "batches": [
+    {
+      "at_ms": 1700000005000,
+      "address": "0xAAA0000000000000000000000000000000000001",
+      "participant": "alice",
+      "kind": "baseline",
+      "payload": { "marginSummary": { "accountValue": "50000" } }
+    },
+    {
+      "at_ms": 1700000006000,
+      "address": "0xBBB0000000000000000000000000000000000002",
+      "participant": "bob",
+      "kind": "baseline",
+      "payload": { "marginSummary": { "accountValue": "40000" } }
+    },
+    {
+      "at_ms": 1700000060000,
+      "window_start_ms": 1700000000000,
+      "address": "0xAAA0000000000000000000000000000000000001",
+      "participant": "alice",
+      "kind": "fills",
+      "payload": [
+        { "tid": 101, "time": 1700000050000, "closedPnl": "1200.50", "fee": "0.50", "coin": "ETH", "side": "B", "px": "3000", "sz": "1" }
+      ]
+    },
+    {
+      "at_ms": 1700000090000,
+      "window_start_ms": 1700000060000,
+      "address": "0xBBB0000000000000000000000000000000000002",
+      "participant": "bob",
+      "kind": "fills",
+      "payload": [
+        { "tid": 201, "time": 1700000080000, "closedPnl": "900.00", "fee": "0.00", "coin": "BTC", "side": "A", "px": "60000", "sz": "0.1" }
+      ]
+    },
+    {
+      "at_ms": 1700000180000,
+      "window_start_ms": 1700000090000,
+      "address": "0xAAA0000000000000000000000000000000000001",
+      "participant": "alice",
+      "kind": "fills",
+      "payload": [
+        { "tid": 102, "time": 1700000170000, "closedPnl": "5000.00", "fee": "1.00", "coin": "ETH", "side": "B", "px": "3100", "sz": "2" }
+      ]
+    },
+    {
+      "at_ms": 1700000240000,
+      "window_start_ms": 1700000180000,
+      "address": "0xAAA0000000000000000000000000000000000001",
+      "participant": "alice",
+      "kind": "fills",
+      "payload": [
+        { "tid": 103, "time": 1700000230000, "closedPnl": "4000.00", "fee": "0.00", "coin": "ETH", "side": "A", "px": "3200", "sz": "2" }
+      ]
+    }
+  ]
+}

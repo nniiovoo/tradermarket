@@ -1,0 +1,28 @@
+{
+  "name": "live-market-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14 <25"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "operator": "node scripts/live-market-operator.mjs",
+    "preview": "vite preview",
+    "test:math": "node --test tests/market-math.test.mjs",
+    "test:sites": "node --test tests/sites-worker.test.mjs",
+    "test:room": "node --test tests/room-client.test.mjs",
+    "pretest": "npm run build",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "5.0.4",
+    "lucide-react": "^1.31.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "viem": "^2.55.16",
+    "vite": "6.4.3"
+  }
+}

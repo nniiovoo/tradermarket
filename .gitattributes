@@ -1,0 +1,29 @@
+# Files that stay in the private repository and never reach a public export.
+# `git archive` honours these, which is what scripts/prepare-open-source.sh
+# uses, so exclusion is declared here once rather than re-implemented as a
+# delete step that can drift.
+
+# The engineering record: competitor product screenshots, AI-generated
+# likenesses of a named living person inside a wagering interface, and a third
+# party's payment details. None of it is ours to redistribute.
+/.scratch export-ignore
+/.scratch/** export-ignore
+prototype/live-market-app/.scratch export-ignore
+prototype/live-market-app/.scratch/** export-ignore
+
+# The release tooling itself. It names the identifiers it forbids and the
+# private history it checks against, so a gate that shipped with the export
+# would both leak that material and match itself.
+scripts/prepare-open-source.sh  export-ignore
+/.release export-ignore
+/.release/** export-ignore
+
+# Internal QA notes. Every one of them cites screenshot evidence that lives in
+# .scratch/ and therefore is not published; without the evidence the documents
+# are assertions with dangling references.
+design-qa.md                    export-ignore
+prototype/live-market-app/design-qa.md export-ignore
+
+# Describes the private .scratch/ issue convention, which the public repo does
+# not use — it uses GitHub Issues.
+docs/agents/issue-tracker.md    export-ignore

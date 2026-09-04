@@ -1,0 +1,36 @@
+[Unit]
+Description=TraderMarket Live Room gate authority
+Documentation=file:///opt/tradermarket/docs/runbooks/LIVE_ROOM_OPERATIONS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tradermarket
+Group=tradermarket
+WorkingDirectory=/opt/tradermarket/services/live-room
+# This role's configuration and its own signing key. Never inline: a key in an
+# ExecStart line is readable from /proc by every user on the machine.
+EnvironmentFile=/etc/tradermarket/gate.env
+ExecStart=/usr/bin/node --no-warnings scripts/operator.mjs gate
+# An authority that stays down stops a live session. Restart, always, with a
+# backoff that does not hammer an RPC endpoint that is itself in trouble.
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+# Durable state lives in TM_DATA_DIR. Losing it costs the gate its nonce
+# counter and its audit log, so the process gets a writable path and nothing
+# else it does not need.
+StateDirectory=tradermarket
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/tradermarket
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

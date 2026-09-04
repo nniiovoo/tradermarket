@@ -1,0 +1,78 @@
+import { parseAbi } from "viem";
+
+export const erc20Abi = parseAbi([
+  "function balanceOf(address owner) view returns (uint256)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+]);
+
+export const marketAbi = parseAbi([
+  "function question() view returns (string)",
+  "function participantAName() view returns (string)",
+  "function participantBName() view returns (string)",
+  "function streamUrl() view returns (string)",
+  "function imageUrl() view returns (string)",
+  "function participantA() view returns (address)",
+  "function participantB() view returns (address)",
+  "function rewardAddressA() view returns (address)",
+  "function rewardAddressB() view returns (address)",
+  "function gateState() view returns (uint8)",
+  "function provisionalOutcome() view returns (uint8)",
+  "function provisionalEvidenceHash() view returns (bytes32)",
+  "function provisionalAt() view returns (uint64)",
+  "function challengeWindow() view returns (uint64)",
+  "function challenged() view returns (bool)",
+  "function challenger() view returns (address)",
+  "function challengeEvidenceHash() view returns (bytes32)",
+  "function challengedAt() view returns (uint64)",
+  "function challengeTimeout() view returns (uint64)",
+  "function resolutionDueAt() view returns (uint64)",
+  "function finalOutcome() view returns (uint8)",
+  "function reserveA() view returns (uint256)",
+  "function reserveB() view returns (uint256)",
+  "function collateralBacking() view returns (uint256)",
+  "function winnerRewardPool() view returns (uint256)",
+  // Per-market rate; zero is a valid configuration, so it is read not assumed.
+  "function winnerRewardBps() view returns (uint16)",
+  "function totalLpShares() view returns (uint256)",
+  "function currentEpoch() view returns (uint64)",
+  "function lastSafeSequence() view returns (uint256)",
+  "function positionAOf(address user) view returns (uint256)",
+  "function positionBOf(address user) view returns (uint256)",
+  "function lpSharesOf(address user) view returns (uint256)",
+  "function lpFeeCredit(address user) view returns (uint256)",
+  "function integrityBondOf(address user) view returns (uint256)",
+  "function winnerFeePaid(address user) view returns (uint256)",
+  "function INTEGRITY_BOND() view returns (uint256)",
+  "function CHALLENGE_BOND() view returns (uint256)",
+  "function RESOLVER_ROLE() view returns (bytes32)",
+  "function GATE_ROLE() view returns (bytes32)",
+  "function hasRole(bytes32 role,address account) view returns (bool)",
+  "function submitBuy(bool participantAOutcome,uint256 budget,uint256 minimumPositions,uint64 deadline) returns (uint256)",
+  "function submitSell(bool participantAOutcome,uint256 positionsIn,uint256 minimumCollateral,uint64 deadline) returns (uint256)",
+  "function submitAddLiquidity(uint256 amount,uint256 minimumShares,uint64 deadline) returns (uint256)",
+  "function postIntegrityBond()",
+  "function challengeResult(bytes32 evidenceHash,uint256 bond)",
+  "function attestResult(uint8 outcome,bytes32 evidenceHash)",
+  "function attestChallengeVerdict(bool acceptChallenge)",
+  "function finalizeUnchallenged()",
+  "function expireChallenge()",
+  "function invalidateUnresolved()",
+  "function closeForDecisiveEvent(uint256 sourceSequence)",
+  "function redeemPositions()",
+  "function claimLpFees()",
+  "function settleLpInventory()",
+  "function claimWinnerReward()",
+  "function claimInvalidWinnerFeeRefund()",
+  "function claimIntegrityBond()",
+]);
+
+// A Live Room owns the participants' one-per-session Integrity Bonds. Child
+// markets deliberately reject these calls in room mode, so the browser needs a
+// distinct ABI instead of pretending the room is another market.
+export const liveRoomAbi = parseAbi([
+  "function ROOM_INTEGRITY_BOND() view returns (uint256)",
+  "function integrityBondOf(address user) view returns (uint256)",
+  "function postIntegrityBond()",
+  "function claimIntegrityBond()",
+]);

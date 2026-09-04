@@ -1,0 +1,47 @@
+[Unit]
+# The keeper is the one operator that is NOT an authority. It decides nothing:
+# every function it may call — finalizeUnchallenged, expireChallenge,
+# invalidateUnresolved — is permissionless, and the contract itself decides
+# whether it is time. It holds a key only because sending a transaction costs
+# gas, so this key needs funding and no on-chain role whatsoever.
+#
+# It exists because every payout path on the market contract is `onlyFinal`.
+# Without this unit running, a market whose challenge window has elapsed stays
+# unresolved and nobody can redeem, settle LP inventory, claim a winner reward
+# or release an Integrity Bond. Nothing is trapped — a stranger can always call
+# these — but nothing is responsible for it either.
+Description=TraderMarket Live Room keeper (finalization; holds no authority)
+Documentation=file:///opt/tradermarket/docs/runbooks/LIVE_ROOM_OPERATIONS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tradermarket
+Group=tradermarket
+WorkingDirectory=/opt/tradermarket/services/live-room
+# This role's configuration and its own signing key. Never inline: a key in an
+# ExecStart line is readable from /proc by every user on the machine.
+EnvironmentFile=/etc/tradermarket/keeper.env
+ExecStart=/usr/bin/node --no-warnings scripts/operator.mjs keeper
+# A keeper that stays down does not stop a session — it stops people being
+# paid, which is quieter and worse. Restart, always, with a backoff that does
+# not hammer an RPC endpoint that is itself in trouble.
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+# Durable state lives in TM_DATA_DIR. The keeper writes only its own liveness
+# record there, but it shares the store with every other role.
+StateDirectory=tradermarket
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/tradermarket
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

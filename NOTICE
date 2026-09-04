@@ -1,0 +1,92 @@
+TraderMarket
+Copyright (c) 2026 TraderMarket contributors
+
+This product is licensed under the MIT License. See LICENSE for the full text,
+which is the unmodified standard MIT text and carries no additional terms — a
+licence with local edits is a licence nobody can scan, so the conditions and
+caveats that would otherwise clutter it live here instead.
+
+--------------------------------------------------------------------------------
+SCOPE OF THE MIT GRANT
+--------------------------------------------------------------------------------
+
+The MIT grant covers **every file in this repository except `contracts/lib/`**.
+
+Stated as an exclusion rather than as a list of included directories, because a
+list is a promise that goes stale: adding a directory, a configuration file or
+a workflow would silently leave it outside the grant, and a file nobody granted
+rights to is all-rights-reserved no matter what the README says. There is one
+carve-out and this is it.
+
+`contracts/lib/` holds third-party dependencies redistributed under their own
+licences. Those are listed below and their full texts ship alongside the code
+they cover. Nothing else in this repository is third-party source.
+
+--------------------------------------------------------------------------------
+THIRD-PARTY COMPONENTS
+--------------------------------------------------------------------------------
+
+Foundry forge-std
+    Version:  1.16.2
+    Licence:  Apache-2.0 OR MIT
+    Path:     contracts/lib/forge-std/
+    Texts:    contracts/lib/forge-std/LICENSE-APACHE
+              contracts/lib/forge-std/LICENSE-MIT
+
+OpenZeppelin Contracts
+    Version:  5.4.0
+    Licence:  MIT
+    Path:     contracts/lib/openzeppelin-contracts/
+    Text:     contracts/lib/openzeppelin-contracts/LICENSE
+
+Compound (vendored by OpenZeppelin)
+    Licence:  BSD-3-Clause
+    Path:     contracts/lib/openzeppelin-contracts/contracts/vendor/compound/
+    Text:     contracts/lib/openzeppelin-contracts/contracts/vendor/compound/LICENSE
+
+Every third-party licence in this repository is permissive. There is no
+copyleft component: the AGPL-3.0 test fixtures that OpenZeppelin vendors for
+its own test suite (halmos-cheatcodes, erc4626-tests) were removed, because
+nothing here imported them and redistributing strong-copyleft code that serves
+no purpose is a liability with no upside.
+
+The dependencies are vendored rather than referenced as git submodules, so a
+clone gets a complete, buildable tree with no `--recursive` step. What is
+vendored is only what TraderMarket compiles and tests against: upstream test
+suites, documentation and build scripts are not included.
+
+--------------------------------------------------------------------------------
+JAVASCRIPT DEPENDENCIES
+--------------------------------------------------------------------------------
+
+`services/live-room/` and `prototype/live-market-app/` declare dependencies in
+`package.json` and do not vendor `node_modules/`. Nothing third-party is
+redistributed here; consumers install those packages themselves under the
+publishers' own terms.
+
+For the live inventory, run `npm ls --all` in either package. This file does
+not duplicate it, because a hand-copied dependency list goes stale silently
+and a stale licence inventory is worse than none.
+
+--------------------------------------------------------------------------------
+TRADEMARKS
+--------------------------------------------------------------------------------
+
+Third-party names appearing in this repository — including Hyperliquid,
+Circle, USDC, Polygon, YouTube, Twitch and Kick — are trademarks of their
+respective owners. They identify interoperability targets and configured
+sources. Their use is nominative and implies no affiliation, sponsorship, or
+endorsement.
+
+--------------------------------------------------------------------------------
+STATUS OF THIS SOFTWARE
+--------------------------------------------------------------------------------
+
+TraderMarket is unaudited testnet software. It has had no independent security
+review, is not deployed to any production network, and its collateral is test
+USDC with no real-world value. No claim of legal availability is made in any
+jurisdiction.
+
+The MIT licence grants you the right to use this code. It is not a
+representation that doing so is safe, lawful where you are, or ready for real
+funds.

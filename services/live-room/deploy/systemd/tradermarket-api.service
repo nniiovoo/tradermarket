@@ -1,0 +1,31 @@
+[Unit]
+Description=TraderMarket Live Room Coordinator and read API
+Documentation=file:///opt/tradermarket/docs/runbooks/LIVE_ROOM_OPERATIONS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tradermarket
+Group=tradermarket
+WorkingDirectory=/opt/tradermarket/services/live-room
+# The Coordinator holds no chain key. This file carries endpoints and room
+# addresses only — if it ever needs a TM_*_KEY, something is wrong.
+EnvironmentFile=/etc/tradermarket/api.env
+ExecStart=/usr/bin/node --no-warnings scripts/serve.mjs
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=0
+StateDirectory=tradermarket
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/tradermarket
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

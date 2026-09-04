@@ -1,0 +1,30 @@
+{
+  "name": "live-room-services",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14 <25"
+  },
+  "scripts": {
+    "test": "node --test 'tests/*.test.mjs'",
+    "gameday": "node scripts/gameday.mjs",
+    "gameday:anvil": "sh -c 'anvil --port 8545 --silent & tm_anvil_pid=$!; trap \"kill $tm_anvil_pid 2>/dev/null || true\" EXIT; sleep 2; node scripts/gameday.mjs'",
+    "serve": "node --no-warnings scripts/serve.mjs",
+    "operator": "node --no-warnings scripts/operator.mjs",
+    "preflight": "node --no-warnings scripts/preflight.mjs",
+    "live-gameday": "node --no-warnings scripts/live-gameday.mjs",
+    "live-gameday:anvil": "sh -c 'anvil --port 8545 --silent & tm_anvil_pid=$!; trap \"kill $tm_anvil_pid 2>/dev/null || true\" EXIT; sleep 2; node scripts/live-gameday.mjs'",
+    "backup": "node --no-warnings scripts/backup.mjs",
+    "multiprocess-gameday": "node --no-warnings scripts/multiprocess-gameday.mjs",
+    "multiprocess-gameday:anvil": "sh -c 'anvil --port 8545 --silent & tm_anvil_pid=$!; trap \"kill $tm_anvil_pid 2>/dev/null || true\" EXIT; sleep 2; node --no-warnings scripts/multiprocess-gameday.mjs'",
+    "queue-question": "node --no-warnings scripts/queue-question.mjs"
+  },
+  "dependencies": {
+    "pg": "^8.23.0",
+    "viem": "^2.55.16"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.7"
+  }
+}

@@ -1,0 +1,203 @@
+# Alerting rules for a Live Room deployment.
+#
+# Scrape target: the Coordinator's `/metrics` endpoint, which needs no
+# credential and no vendor account. Load with:
+#
+#   rule_files:
+#     - /etc/prometheus/rules/tradermarket.rules.yml
+#
+# Two principles decide what pages a person here.
+#
+# The first is that alerts follow money. A stale approved source stops epochs
+# clearing and holds Forecasters' pending actions until they refund; that is an
+# incident. A degraded livestream is a worse show and changes nothing about a
+# market, so it is never allowed to page anyone — an operator woken at 3am for a
+# video problem learns to treat the source alerts the same way.
+#
+# The second is that a metric that is absent is not a metric that is zero. Every
+# rule below guards on the series existing, because this build deliberately
+# omits what it has not measured, and `absent()` firing is itself the useful
+# signal that a process stopped exporting.
+
+groups:
+  - name: tradermarket-live-room
+    rules:
+      - alert: TraderMarketSourceStale
+        expr: tradermarket_source_health{state="stale"} == 1
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "The approved source has gone stale; no epoch will clear."
+          description: >-
+            Nothing settles on stale data — that is the design — but pending
+            Forecaster actions wait and then refund, and the room suspends.
+            Check the connector process first, then the provider.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#failure-playbook
+
+      - alert: TraderMarketIndexerDelayed
+        expr: tradermarket_indexer_health{state="delayed"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The indexer is behind the chain head."
+          description: >-
+            Reads are stale; chain state is unaffected and trading is
+            unaffected. The app falls back to direct RPC reads and says so.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#failure-playbook
+
+      - alert: TraderMarketIndexerLagGrowing
+        expr: tradermarket_indexer_lag_blocks > 500
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The indexer cursor is more than 500 blocks behind."
+          description: >-
+            A restart rebuilds from genesis with no manual intervention. If lag
+            keeps growing after a restart, the RPC endpoint is the suspect.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#monitoring
+
+      - alert: TraderMarketHistoryNotDurable
+        expr: tradermarket_history_durable == 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Non-chain history is in memory and will not survive a restart."
+          description: >-
+            Chat, acceptances and referral bindings are being held in memory.
+            A restart loses them silently. Set TM_DATA_DIR and restart once,
+            deliberately, before that happens by accident.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#running-the-whole-thing
+
+      - alert: TraderMarketMisconfigured
+        expr: tradermarket_config_warning == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The process can see that it is misconfigured."
+          description: >-
+            Read /v1/health: the process is serving with something missing that
+            it knows about, and is saying so rather than pretending.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#monitoring
+
+      - alert: TraderMarketCoordinatorNotScraped
+        expr: absent(tradermarket_rooms_served)
+        for: 3m
+        labels:
+          severity: page
+        annotations:
+          summary: "The Coordinator is not exporting metrics."
+          description: >-
+            The process is down or unreachable. Chain state and custody are
+            unaffected — the Coordinator holds no key — but nobody can see the
+            room, and no other alert here can fire while this one is true.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#failure-playbook
+
+      - alert: TraderMarketAuthoritySilent
+        expr: tradermarket_operator_last_success_age_seconds > 300
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "An authority process has not completed a tick in five minutes."
+          description: >-
+            The gate, publisher, connector and resolver each catch their own
+            errors and keep ticking, so a process that can never work fails
+            quietly and the session simply stops progressing. Check that
+            process first, then its RPC endpoint. Money is not trapped — anyone
+            may close a stalled room once the on-chain timeout passes — but
+            nothing moves until this is fixed.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#keeping-the-processes-up
+
+      # This is the rule that catches a process which has NEVER succeeded — a
+      # misconfigured endpoint from the first tick. Such a process has no
+      # "seconds since it last worked", because it never has, so the alert
+      # above structurally cannot fire for it. Do not be tempted to export a
+      # zero or a very large age to make it fire: that is inventing a
+      # measurement, and this rule already covers the case.
+      - alert: TraderMarketAuthorityFailing
+        expr: tradermarket_operator_failing == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "An authority's last tick failed."
+          description: >-
+            One failed tick is normal — a slow RPC, a dropped connection. Five
+            minutes of them is a process that is not working, and an authority
+            that has never succeeded at all shows up only here. The reason it
+            reported is on /v1/health.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#failure-playbook
+
+      # THRESHOLD IS DEPLOYMENT-SPECIFIC. Set it from the disk you actually
+      # gave this service, not from this number. Measured growth is about
+      # 1.6 KB per recorded fact — roughly 130 MiB/day at one fact per second,
+      # half a gigabyte a day at four. The event log and raw archive are never
+      # pruned, because they are the evidence a resolver reconstructs from and
+      # a challenger re-derives from; the answer to this alert is a bigger disk
+      # or an archived session, never a DELETE.
+      - alert: TraderMarketDurableStoreLarge
+        expr: tradermarket_durable_bytes > 40e9
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Non-chain history is approaching the size of its disk."
+          description: >-
+            When the disk fills, SQLite writes fail, the connector stops
+            recording facts, and the room suspends on a stale source. That
+            failure is correct and completely opaque — this is the warning that
+            precedes it. Back up and move the file, or archive the completed
+            session; do not prune the log.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#backups
+
+      - alert: TraderMarketStreamDegraded
+        expr: tradermarket_stream_health{state="live"} == 0
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "The livestream is not healthy. This is not a market problem."
+          description: >-
+            Stream health is presentation only and never suspends a market or
+            affects a settlement. This alert exists so nobody reads a broken
+            video player as a trading incident. It must never page a person.
+          runbook: docs/runbooks/LIVE_ROOM_OPERATIONS.md#failure-playbook
+
+      # Gate lag is the delay between a source fact being observed and the epoch
+      # holding it being marked safe on chain. It is the latency that decides
+      # whether forecasting closes on time, and the runbook has always had a
+      # playbook for it — but until the gate began reporting it, no rule could
+      # fire. Threshold is 2x the default target (sourceFinalityDelay 15s + 3s).
+      - alert: TraderMarketGateLagHigh
+        expr: tradermarket_gate_lag_seconds > 36
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: "Gate lag {{ $value }}s is more than twice its target"
+          description: >
+            The gate is marking epochs safe long after the source facts they
+            contain were observed. Forecaster actions clear late and, past
+            maxPendingTime, refund instead of executing. See
+            docs/runbooks/LIVE_ROOM_OPERATIONS.md, "gate_lag_seconds paging".
+
+      # Past maxPendingTime an uncleared action refunds instead of executing: the
+      # forecaster gets their collateral back and no position, having done
+      # nothing wrong. Threshold is the documented target for the shipped
+      # defaults (sourceFinalityDelay 15s + epochDuration 60s + 5s).
+      - alert: TraderMarketEpochClearSlow
+        expr: tradermarket_epoch_clear_seconds > 80
+        for: 3m
+        labels:
+          severity: page
+        annotations:
+          summary: "Forecaster actions are clearing in {{ $value }}s"
+          description: >
+            Actions are executing long after submission. Past the room's
+            maxPendingTime they refund instead of executing. Check gate lag and
+            the gate process first. See docs/runbooks/LIVE_ROOM_OPERATIONS.md.

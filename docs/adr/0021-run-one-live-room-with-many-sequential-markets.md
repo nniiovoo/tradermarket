@@ -1,0 +1,21 @@
+---
+status: accepted
+amends: 0013, 0017, 0020
+amended-by: 0023
+---
+
+# Run one Live Room with many sequential Competition Markets
+
+A Live Session will host a **Live Room** rather than a single Competition Market. The room is the persistent surface that carries the Livestream, the Participants, the Official Scores, the source status, and an ordered **Room Program** of **Market Slots**. Each slot materializes into exactly one independent binary Competition Market with its own FPMM, LP Shares, Liquidity Fees, epochs, opening condition, Closing Condition, Resolver Set, and Resolution record. Nothing is pooled across slots: no shared reserves, no shared collateral, no shared fee accounting, and no cross-market netting.
+
+The Integrity Bond is the one commitment that stays room-scoped. Each Participant posts it once to the room contract for the whole Live Session, because a per-market bond would demand a fresh 100 USDC and a fresh Participant signature for every question published while they are competing. Markets learn readiness through a dedicated immutable `readinessSource` rather than through the gate address, because readiness is a statement about Participant commitment and gating is a statement about source safety; they are the same contract today and should still be separable later. A bond is released only when the room's terminal condition has occurred, no further slot can ever be published, every published slot is Final or Invalid, and the Integrity Claim Window has closed with no unresolved claim. Bond amounts, forfeiture rules, and the objective violation process are unchanged; custody and release conditions move.
+
+Slots come from approved, versioned **Question Templates** whose Opening Condition and Closing Condition are frozen predicates over the Live Session's single **Session Event Log**. Three question shapes are supported: a participant-outcome question whose outcomes are the two Participants, a threshold question whose outcomes are Yes and No for one published metric, and a race question that resolves to a Tie when neither Participant satisfies its condition before the Live Session's terminal condition. The room's headline market is the participant-outcome question on the whole Live Competition, and it is the only slot that must exist.
+
+A slot may only be published while its Closing Condition is still undecided, and its Forecasting Window may only open after a frozen **Announce Delay**. Because a contract cannot read the Session Event Log, undecidedness is established by a Gate Authority signature rather than by a sequence number; ADR 0022 specifies the Publication Permit that carries it. A micro slot may not be published at all until the headline slot is backed by liquidity, so audience attention is never split onto a question that cannot execute. The Live Session's terminal condition closes every open slot; a slot's own Decisive Event closes only that slot and lets the room advance to the next one.
+
+The Winner Reward Fee becomes a per-market configuration value bounded at 100 basis points instead of a library constant. Participant-outcome and race slots keep the 1% whole-market Winner Reward Pool paid to the winning Participant's reward address. Threshold slots set it to zero, because Yes and No are not Participants and a winner-contingent reward has no recipient there. This amends ADR 0013, which assumed exactly one reward-bearing market per Live Session.
+
+Every slot funds its own liquidity. There is no shared vault, no inherited depth, and no automatic migration of an expiring slot's reserves into the next one, so a short question that attracts no eligible LP simply stays non-executable while the room continues. This amends ADR 0017 only by repeating it per slot. Concurrency is capped by the Competition Template so that audience attention and LP capital are not split across an unbounded number of simultaneous questions.
+
+The cost is real: more markets means more gate transactions, more epoch processing, more resolution work, more evidence bundles, and thinner individual pools. The room absorbs the transaction cost through batched gating, and accepts the thin-pool risk as the price of a live product where the audience always has a question in front of it.

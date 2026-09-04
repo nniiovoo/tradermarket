@@ -1,0 +1,12 @@
+import { createPublicClient, http, encodeEventTopics, toEventSelector } from "viem";
+import { foundry } from "viem/chains";
+import { abis } from "./src/indexer/abi.mjs";
+const pc = createPublicClient({ chain: foundry, transport: http("http://127.0.0.1:8545") });
+const head = Number(await pc.getBlockNumber());
+const market = "0x5760c9A8Bc25A40E17838B0Ed564702F2173bd0D";
+const logs = await pc.getLogs({ address: market, fromBlock: 0n, toBlock: BigInt(head) });
+console.log("head", head, "logs", logs.length);
+const ev = abis().market.find((e) => e.type === "event" && e.name === "ResultAttested");
+console.log("abi item:", JSON.stringify(ev));
+console.log("viem selector:", toEventSelector(ev));
+console.log("actual topics0 present:", [...new Set(logs.map((l) => l.topics[0]))]);
