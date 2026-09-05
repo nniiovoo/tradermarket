@@ -79,7 +79,7 @@ test("a real cross-origin read still answers with the allow-origin header", asyn
   const { server, base } = await harness();
   try {
     const response = await fetch(`${base}/v1/portfolio/0xabc`, {
-      headers: { origin: "http://localhost:5173", "x-tm-address": "0xabc" },
+      headers: { origin: "http://localhost:5173", "x-tm-address": "0x000000000000000000000000000000000000abc0" },
     });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("access-control-allow-origin"), "*");
@@ -118,7 +118,7 @@ test("an oversized body is refused rather than buffered", async () => {
     const response = await fetch(`${base}/v1/entry/accept`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ address: "0xa", pad: "x".repeat(2_000_000) }),
+      body: JSON.stringify({ address: "0x000000000000000000000000000000000000000a", pad: "x".repeat(2_000_000) }),
       signal: AbortSignal.timeout(4000),
     });
     assert.equal(response.status, 413, "a body with no cap is an unbounded heap vector");

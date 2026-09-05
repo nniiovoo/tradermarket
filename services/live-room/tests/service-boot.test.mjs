@@ -118,7 +118,7 @@ test("a slow sync does not overlap itself", async () => {
 
 test("chat claims are bound to the room this process serves", () => {
   const service = buildService(configFromEnv({ ...COMPLETE_ENV, TM_CHAT_ENABLED: "true" }));
-  const claim = service.chat.claimFor({ address: "0xA", text: "hello", issuedAt: 1 });
+  const claim = service.chat.claimFor({ address: "0x000000000000000000000000000000000000000a", text: "hello", issuedAt: 1 });
   assert.match(claim, /room-1/, "a claim signed here must not be valid on another room");
 });
 
@@ -231,8 +231,8 @@ test("a configured data directory makes non-chain history durable", async () => 
     assert.equal(enabled.report().capabilities.livestream_oracle.available, true);
 
     // The stores the service actually built, not a claim about them.
-    await service.eventLog.append({ seq: 1, kind: "baseline", hash: "0xa" });
-    await service.chat.store.append({ author: "0xA", text: "hi", at: "2026-01-01T00:00:00.000Z" });
+    await service.eventLog.append({ seq: 1, kind: "baseline", hash: "0x000000000000000000000000000000000000000a" });
+    await service.chat.store.append({ author: "0x000000000000000000000000000000000000000a", text: "hi", at: "2026-01-01T00:00:00.000Z" });
 
     const restarted = buildService(configFromEnv({ ...COMPLETE_ENV, TM_DATA_DIR: dir }));
     assert.equal((await restarted.eventLog.tip()).seq, 1, "the session log continued");
@@ -253,31 +253,31 @@ test("a signed allowlist acceptance still opens the interface after a restart", 
     ...COMPLETE_ENV,
     TM_DATA_DIR: dir,
     TM_ALLOWLIST_ENABLED: "true",
-    TM_ALLOWLIST: "0xA",
+    TM_ALLOWLIST: "0x000000000000000000000000000000000000000a",
   };
   const dependencies = { verifySignature: async () => true };
   try {
     let service = buildService(configFromEnv(env), dependencies);
     const attestations = Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((entry) => [entry.id, true]));
     const accepted = await service.entry.accept({
-      address: "0xA",
+      address: "0x000000000000000000000000000000000000000a",
       version: TERMS_VERSION,
       attestations,
-      claim: service.entry.claimFor({ address: "0xA" }),
+      claim: service.entry.claimFor({ address: "0x000000000000000000000000000000000000000a" }),
       signature: "0xGOOD",
     });
     assert.equal(accepted.proven, true);
-    assert.equal((await service.entry.status("0xA")).can_enter, true);
+    assert.equal((await service.entry.status("0x000000000000000000000000000000000000000a")).can_enter, true);
     service.database.close();
 
     service = buildService(configFromEnv(env), dependencies);
     const address = await service.server.listen(0);
     const response = await fetch(`http://127.0.0.1:${address.port}/v1/rooms`, {
-      headers: { "x-tm-address": "0xA" },
+      headers: { "x-tm-address": "0x000000000000000000000000000000000000000a" },
     });
     assert.equal(response.status, 200, "the first gated request after a restart must restore the durable proof");
     assert.equal(
-      (await service.entry.status("0xA")).can_enter,
+      (await service.entry.status("0x000000000000000000000000000000000000000a")).can_enter,
       true,
       "a process restart must not forget signature proof"
     );

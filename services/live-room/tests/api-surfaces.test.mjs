@@ -42,7 +42,7 @@ async function harness({ capabilities = new Capabilities({}), allowlistEnabled =
   });
   const edge = new RealtimeEdge({ coordinator, config: { heartbeatMs: 10000, maxQueue: 16 } });
   edgeRef.edge = edge;
-  const allowlist = new Allowlist({ addresses: ["0xallowed"], enabled: allowlistEnabled });
+  const allowlist = new Allowlist({ addresses: ["0x00000000000000000000000000000000000a110d"], enabled: allowlistEnabled });
   const server = new RoomApiServer({
     coordinator, edge, store: projection, eventLog,
     chat: new ChatService({ verifySignature: async () => true, config: { rateLimitPerMinute: 5, moderators: new Set() } }),
@@ -154,13 +154,13 @@ test("the entry journey is served and terms can be accepted", async () => {
     assert.equal(terms.body.version, TERMS_VERSION);
     assert.equal(terms.body.attestations.length, ELIGIBILITY_ATTESTATIONS.length);
 
-    const before = await get(base, "/v1/entry/status?address=0xallowed");
+    const before = await get(base, "/v1/entry/status?address=0x00000000000000000000000000000000000a110d");
     assert.equal(before.body.can_enter, false);
 
     const partial = await fetch(`${base}/v1/entry/accept`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ address: "0xallowed", version: TERMS_VERSION, attestations: { age: true } }),
+      body: JSON.stringify({ address: "0x00000000000000000000000000000000000a110d", version: TERMS_VERSION, attestations: { age: true } }),
     });
     assert.equal(partial.status, 400);
 
@@ -168,7 +168,7 @@ test("the entry journey is served and terms can be accepted", async () => {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        address: "0xallowed",
+        address: "0x00000000000000000000000000000000000a110d",
         version: TERMS_VERSION,
         attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true])),
       }),
@@ -178,23 +178,23 @@ test("the entry journey is served and terms can be accepted", async () => {
 
     // Unsigned, so the journey step is recorded but the gate is not opened:
     // allowlisted addresses are public and anyone could post this.
-    const unsigned = await get(base, "/v1/entry/status?address=0xallowed");
+    const unsigned = await get(base, "/v1/entry/status?address=0x00000000000000000000000000000000000a110d");
     assert.equal(unsigned.body.can_enter, false);
 
     const signed = await fetch(`${base}/v1/entry/accept`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        address: "0xallowed",
+        address: "0x00000000000000000000000000000000000a110d",
         version: TERMS_VERSION,
         attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true])),
-        claim: ["tradermarket-terms-v1", "0xallowed", TERMS_VERSION].join("\n"),
+        claim: ["tradermarket-terms-v1", "0x00000000000000000000000000000000000a110d", TERMS_VERSION].join("\n"),
         signature: "0xGOOD",
       }),
     });
     assert.equal(signed.status, 200);
 
-    const after = await get(base, "/v1/entry/status?address=0xallowed");
+    const after = await get(base, "/v1/entry/status?address=0x00000000000000000000000000000000000a110d");
     assert.equal(after.body.can_enter, true);
   } finally {
     await server.close();

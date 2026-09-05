@@ -102,6 +102,16 @@ export class EntryGate {
   /** Records acceptance. Every attestation must be individually affirmed. */
   async accept({ address, version, attestations = {}, claim = null, signature = null }) {
     if (!address) return { accepted: false, reason: "connect an account before accepting the terms" };
+    // Every row here is a consent record: it says a specific account affirmed
+    // its age, its understanding of the risk, and its jurisdiction. `String()`
+    // accepted anything, so `{a:1}` became the account "[object object]" and a
+    // 60,000-character string became a 60,000-byte primary key — in a table
+    // sharing room.db with the event log, the chat audit and the gate nonce,
+    // none of which is rebuildable. A claim about a subject that cannot exist
+    // is worse than no claim.
+    if (typeof address !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+      return { accepted: false, reason: "an account address must be 0x followed by 40 hex characters" };
+    }
     if (version !== TERMS_VERSION) {
       return {
         accepted: false,

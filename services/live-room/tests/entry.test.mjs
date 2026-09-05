@@ -49,65 +49,65 @@ test("the terms state every attestation a person actually makes", () => {
 
 test("accepting requires every attestation, not a single blanket tick", async () => {
   const entry = gate();
-  const partial = await entry.accept({ address: "0xA", version: TERMS_VERSION, attestations: { age: true } });
+  const partial = await entry.accept({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION, attestations: { age: true } });
   assert.equal(partial.accepted, false);
   assert.match(partial.reason, /every/i);
 
   const full = await entry.accept({
-    address: "0xA",
+    address: "0x000000000000000000000000000000000000000a",
     version: TERMS_VERSION,
     attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true])),
   });
   assert.equal(full.accepted, true);
-  assert.equal((await entry.status("0xA")).steps.find((step) => step.id === "terms").state, "done");
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).steps.find((step) => step.id === "terms").state, "done");
 });
 
 test("acceptance is bound to a version, so new terms re-prompt", async () => {
   const entry = gate();
   await entry.accept({
-    address: "0xA",
+    address: "0x000000000000000000000000000000000000000a",
     version: TERMS_VERSION,
     attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true])),
   });
-  const stale = await entry.accept({ address: "0xB", version: "terms-0", attestations: {} });
+  const stale = await entry.accept({ address: "0x000000000000000000000000000000000000000b", version: "terms-0", attestations: {} });
   assert.equal(stale.accepted, false);
   assert.match(stale.reason, /version/i);
 });
 
 test("the allowlist step is skipped honestly when the allowlist is off", async () => {
-  const off = await gate({ allowlistEnabled: false }).status("0xA");
+  const off = await gate({ allowlistEnabled: false }).status("0x000000000000000000000000000000000000000a");
   const step = off.steps.find((entry) => entry.id === "allowlist");
   assert.equal(step.state, "not_required");
   assert.match(step.detail, /not enabled/i);
 
-  const on = await gate({ allowlistEnabled: true, addresses: [] }).status("0xA");
+  const on = await gate({ allowlistEnabled: true, addresses: [] }).status("0x000000000000000000000000000000000000000a");
   assert.equal(on.steps.find((entry) => entry.id === "allowlist").state, "blocked");
 });
 
 test("entry is granted only when every required step is done", async () => {
-  const entry = gate({ allowlistEnabled: true, addresses: ["0xA"] });
-  assert.equal((await entry.status("0xA")).can_enter, false, "terms are still outstanding");
+  const entry = gate({ allowlistEnabled: true, addresses: ["0x000000000000000000000000000000000000000a"] });
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, false, "terms are still outstanding");
 
   const all = Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true]));
 
   // An unsigned acceptance records the journey step but does not open the gate:
   // allowlisted addresses are public, so anyone could otherwise post one.
-  await entry.accept({ address: "0xA", version: TERMS_VERSION, attestations: all });
-  assert.equal((await entry.status("0xA")).can_enter, false, "an unproven acceptance is not entry");
+  await entry.accept({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION, attestations: all });
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, false, "an unproven acceptance is not entry");
 
   await entry.accept({
-    address: "0xA",
+    address: "0x000000000000000000000000000000000000000a",
     version: TERMS_VERSION,
     attestations: all,
-    claim: entry.claimFor({ address: "0xA", version: TERMS_VERSION }),
+    claim: entry.claimFor({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION }),
     signature: "0xGOOD",
   });
-  assert.equal((await entry.status("0xA")).can_enter, true);
-  assert.equal((await entry.status("0xB")).can_enter, false, "another address is unaffected");
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, true);
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000b")).can_enter, false, "another address is unaffected");
 });
 
 test("the funding step is honest about what is and is not configured", async () => {
-  const withoutFaucet = (await gate().status("0xA")).steps.find((step) => step.id === "funding");
+  const withoutFaucet = (await gate().status("0x000000000000000000000000000000000000000a")).steps.find((step) => step.id === "funding");
   assert.match(withoutFaucet.detail, /not configured/i);
 
   const withFaucet = new EntryGate({
@@ -117,13 +117,13 @@ test("the funding step is honest about what is and is not configured", async () 
       funding: { faucetUrl: "https://faucet.circle.com" },
     }),
   });
-  const step = (await withFaucet.status("0xA")).steps.find((entry) => entry.id === "funding");
+  const step = (await withFaucet.status("0x000000000000000000000000000000000000000a")).steps.find((entry) => entry.id === "funding");
   assert.equal(step.url, "https://faucet.circle.com");
   assert.match(step.detail, /test USDC/i);
 });
 
 test("the gate never claims gas sponsorship it does not have", async () => {
-  const status = await gate().status("0xA");
+  const status = await gate().status("0x000000000000000000000000000000000000000a");
   assert.match(status.gas_statement, /pay your own gas/i);
   assert.ok(!/(is|are) sponsored/i.test(status.gas_statement));
 });
@@ -184,7 +184,7 @@ test("an unproven acceptance is recorded as unproven, not as an affirmation", as
   // so without a signature the record is a claim about a person made by someone
   // else — which must not be presented as their affirmation.
   const unproven = await gate.accept({
-    address: "0xSOMEONE",
+    address: "0x0000000000000000000000000000000000005011",
     version: TERMS_VERSION,
     attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((entry) => [entry.id, true])),
   });
@@ -193,7 +193,7 @@ test("an unproven acceptance is recorded as unproven, not as an affirmation", as
   assert.equal(unproven.proven, false);
   assert.match(unproven.notice, /not.*(proven|verified|signature)/i);
 
-  const status = await gate.status("0xSOMEONE");
+  const status = await gate.status("0x0000000000000000000000000000000000005011");
   const terms = status.steps.find((step) => step.id === "terms");
   assert.match(terms.detail, /not.*(proven|verified|signature)|self-declared/i);
 });
@@ -206,12 +206,12 @@ test("an acceptance carrying a verified signature is recorded as proven", async 
     verifySignature: async (_address, _message, signature) => signature === "0xGOOD",
   });
 
-  const claim = gate.claimFor({ address: "0xSOMEONE", version: TERMS_VERSION });
+  const claim = gate.claimFor({ address: "0x0000000000000000000000000000000000005011", version: TERMS_VERSION });
   assert.match(claim, /tradermarket-terms/);
   assert.match(claim, new RegExp(TERMS_VERSION));
 
   const proven = await gate.accept({
-    address: "0xSOMEONE",
+    address: "0x0000000000000000000000000000000000005011",
     version: TERMS_VERSION,
     attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((entry) => [entry.id, true])),
     claim,
@@ -221,7 +221,7 @@ test("an acceptance carrying a verified signature is recorded as proven", async 
   assert.equal(proven.proven, true);
 
   const forged = await gate.accept({
-    address: "0xSOMEONE",
+    address: "0x0000000000000000000000000000000000005011",
     version: TERMS_VERSION,
     attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((entry) => [entry.id, true])),
     claim,
@@ -240,14 +240,14 @@ test("the client's terms claim matches the service's, field for field", async ()
   });
 
   assert.equal(
-    termsClaim({ address: "0xAbC", version: TERMS_VERSION }),
-    gate.claimFor({ address: "0xAbC", version: TERMS_VERSION }),
+    termsClaim({ address: "0x000000000000000000000000000000000000AbC0", version: TERMS_VERSION }),
+    gate.claimFor({ address: "0x000000000000000000000000000000000000AbC0", version: TERMS_VERSION }),
     "a drift here refuses every acceptance with 'the signed statement does not match'"
   );
 });
 
 test("an unproven acceptance does not open the API gate for that address", async () => {
-  const allowlist = new Allowlist({ addresses: ["0xallowed"], enabled: true });
+  const allowlist = new Allowlist({ addresses: ["0x00000000000000000000000000000000000a110d"], enabled: true });
   const gate = new EntryGate({
     allowlist,
     capabilities: new Capabilities({ room: { apiUrl: "http://x" } }),
@@ -258,33 +258,33 @@ test("an unproven acceptance does not open the API gate for that address", async
   // Allowlisted addresses are public — they trade on chain. Writing an unproven
   // acceptance into the object that gates the API means a stranger can post
   // someone else's address, then assert it in a header, and be let in.
-  const unproven = await gate.accept({ address: "0xallowed", version: TERMS_VERSION, attestations: all });
+  const unproven = await gate.accept({ address: "0x00000000000000000000000000000000000a110d", version: TERMS_VERSION, attestations: all });
   assert.equal(unproven.accepted, true, "the journey still proceeds");
   assert.equal(unproven.proven, false);
   assert.equal(
-    (await allowlist.check("0xallowed")).allowed,
+    (await allowlist.check("0x00000000000000000000000000000000000a110d")).allowed,
     false,
     "but an unproven acceptance must not satisfy the gate"
   );
 
   const proven = await gate.accept({
-    address: "0xallowed",
+    address: "0x00000000000000000000000000000000000a110d",
     version: TERMS_VERSION,
     attestations: all,
-    claim: gate.claimFor({ address: "0xallowed", version: TERMS_VERSION }),
+    claim: gate.claimFor({ address: "0x00000000000000000000000000000000000a110d", version: TERMS_VERSION }),
     signature: "0xGOOD",
   });
   assert.equal(proven.proven, true);
-  assert.equal((await allowlist.check("0xallowed")).allowed, true, "a signed acceptance does satisfy it");
+  assert.equal((await allowlist.check("0x00000000000000000000000000000000000a110d")).allowed, true, "a signed acceptance does satisfy it");
 });
 
 test("the entry status says the gate still needs a signature", async () => {
-  const allowlist = new Allowlist({ addresses: ["0xallowed"], enabled: true });
+  const allowlist = new Allowlist({ addresses: ["0x00000000000000000000000000000000000a110d"], enabled: true });
   const gate = new EntryGate({ allowlist, capabilities: new Capabilities({ room: { apiUrl: "http://x" } }) });
   const all = Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((entry) => [entry.id, true]));
 
-  await gate.accept({ address: "0xallowed", version: TERMS_VERSION, attestations: all });
-  const step = (await gate.status("0xallowed")).steps.find((entry) => entry.id === "allowlist");
+  await gate.accept({ address: "0x00000000000000000000000000000000000a110d", version: TERMS_VERSION, attestations: all });
+  const step = (await gate.status("0x00000000000000000000000000000000000a110d")).steps.find((entry) => entry.id === "allowlist");
 
   assert.match(step.detail, /sign/i, "the reader must be told why they are still gated");
 });
@@ -296,10 +296,10 @@ test("a build that cannot verify says so, rather than blaming the signature", as
     // No verifier configured.
   });
   const result = await gate.accept({
-    address: "0xA",
+    address: "0x000000000000000000000000000000000000000a",
     version: TERMS_VERSION,
     attestations: Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true])),
-    claim: gate.claimFor({ address: "0xA", version: TERMS_VERSION }),
+    claim: gate.claimFor({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION }),
     signature: "0xANY",
   });
 
@@ -312,41 +312,92 @@ test("a build that cannot verify says so, rather than blaming the signature", as
 });
 
 test("a signature can be added after an unsigned acceptance", async () => {
-  const entry = gate({ allowlistEnabled: true, addresses: ["0xA"] });
+  const entry = gate({ allowlistEnabled: true, addresses: ["0x000000000000000000000000000000000000000a"] });
   const all = Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true]));
 
   // Declining the wallet prompt once must not lock the address out. The
   // acceptance is recorded unproven; signing later must upgrade it.
-  await entry.accept({ address: "0xA", version: TERMS_VERSION, attestations: all });
-  assert.equal((await entry.status("0xA")).can_enter, false);
+  await entry.accept({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION, attestations: all });
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, false);
 
   const signed = await entry.accept({
-    address: "0xA",
+    address: "0x000000000000000000000000000000000000000a",
     version: TERMS_VERSION,
     attestations: all,
-    claim: entry.claimFor({ address: "0xA", version: TERMS_VERSION }),
+    claim: entry.claimFor({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION }),
     signature: "0xGOOD",
   });
   assert.equal(signed.proven, true);
-  assert.equal((await entry.status("0xA")).can_enter, true, "signing later must open the gate");
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, true, "signing later must open the gate");
 });
 
 test("a stranger's unsigned post cannot downgrade a proven acceptance", async () => {
-  const entry = gate({ allowlistEnabled: true, addresses: ["0xA"] });
+  const entry = gate({ allowlistEnabled: true, addresses: ["0x000000000000000000000000000000000000000a"] });
   const all = Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((item) => [item.id, true]));
 
   await entry.accept({
-    address: "0xA",
+    address: "0x000000000000000000000000000000000000000a",
     version: TERMS_VERSION,
     attestations: all,
-    claim: entry.claimFor({ address: "0xA", version: TERMS_VERSION }),
+    claim: entry.claimFor({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION }),
     signature: "0xGOOD",
   });
-  assert.equal((await entry.status("0xA")).can_enter, true);
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, true);
 
   // Anyone can POST this. It must not take away what the real owner proved.
-  await entry.accept({ address: "0xA", version: TERMS_VERSION, attestations: all });
-  assert.equal((await entry.status("0xA")).can_enter, true, "a stranger cannot revoke a proven acceptance");
-  const step = (await entry.status("0xA")).steps.find((s) => s.id === "terms");
+  await entry.accept({ address: "0x000000000000000000000000000000000000000a", version: TERMS_VERSION, attestations: all });
+  assert.equal((await entry.status("0x000000000000000000000000000000000000000a")).can_enter, true, "a stranger cannot revoke a proven acceptance");
+  const step = (await entry.status("0x000000000000000000000000000000000000000a")).steps.find((s) => s.id === "terms");
   assert.match(step.detail, /signed/i, "and it must still be reported as signed");
+});
+
+// accept() recorded a row for anything the caller sent. The only check on
+// `address` was `if (!address)` (entry.mjs:104), so `{a:1}` became the account
+// "[object object]" and a 60,000-character string became a 60,000-byte primary
+// key in `terms_acceptance` — a table whose rows each assert that a specific
+// account affirmed being of age, understanding the risk, and not being in a
+// barred jurisdiction.
+//
+// Two things are wrong with that and only one is about size. A consent record
+// naming a subject that cannot exist is worse than no record: it is a
+// legal-shaped claim about nobody. And the unbounded key is the multiplier on
+// the disk-growth vector SECURITY.md describes, because `terms_acceptance`
+// shares room.db with the Session Event Log, the chat audit and the gate's
+// permit nonce — none of which is rebuildable.
+//
+// Does NOT cover how MANY well-formed addresses one caller may write. That is
+// still unbounded, and it belongs at ingress or in a service-wide write ceiling
+// rather than here.
+test("an account address that cannot exist is refused rather than recorded", async () => {
+  const entry = gate();
+  const all = Object.fromEntries(ELIGIBILITY_ATTESTATIONS.map((e) => [e.id, true]));
+
+  for (const address of [
+    { a: 1 },
+    [1, 2, 3],
+    12345,
+    true,
+    "not-an-address",
+    "0xnothex0000000000000000000000000000000000",
+    "0x" + "a".repeat(39),
+    "0x" + "a".repeat(41),
+    "X".repeat(60000),
+  ]) {
+    const result = await entry.accept({ address, version: TERMS_VERSION, attestations: all });
+    assert.equal(
+      result.accepted,
+      false,
+      `${JSON.stringify(address).slice(0, 40)} was recorded as a consent record`
+    );
+    assert.match(result.reason, /address/i, "the refusal says which field was wrong");
+  }
+
+  // The well-formed case still works, in either case, and normalises.
+  const ok = await entry.accept({
+    address: "0x000000000000000000000000000000000000AbC0",
+    version: TERMS_VERSION,
+    attestations: all,
+  });
+  assert.equal(ok.accepted, true, "a real address is still accepted");
+  assert.equal(await entry.hasAccepted("0x000000000000000000000000000000000000abc0"), true, "and is stored lowercased");
 });

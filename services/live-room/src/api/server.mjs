@@ -117,7 +117,16 @@ export class RoomApiServer {
   }
 
   close() {
-    return new Promise((resolve) => this.server.close(resolve));
+    return new Promise((resolve) => {
+      this.server.close(resolve);
+      // close() stops accepting and then waits for every open connection to end
+      // by itself. A keep-alive socket never does, and an SSE stream is
+      // keep-alive by definition, so this promise could hang forever. That is
+      // why four tests in cors.test.mjs were reported "cancelled" rather than
+      // failing: the assertions had already passed, and the harness was still
+      // waiting on the teardown.
+      this.server.closeAllConnections();
+    });
   }
 
   async handle(request, response) {
@@ -612,6 +621,7 @@ export class RoomApiServer {
       error: status === 500 ? "internal error" : error.message,
     });
   }
+
 
   _json(response, status, payload) {
     this._send(response, status, serialize(payload), JSON_HEADERS);

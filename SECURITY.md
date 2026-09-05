@@ -98,15 +98,37 @@ This codebase is an unaudited Polygon Amoy MVP. It is intended only for test USD
 
   **Two of those are neither rate-limited nor signature-bound, and this file
   previously claimed all six were.** `POST /v1/entry/accept` accepts a null
-  signature and writes an acceptance row regardless (`src/entry/entry.mjs`), so
-  anyone can loop arbitrary addresses into that table; and `/v1/oracle/proofs`
-  is guarded only by a single shared static bearer token while streaming up to
-  250 MB to local disk. The only rate limiting anywhere in the service is
-  chat's per-address in-memory window (`src/edge/edge.mjs`), which additionally
-  runs *after* signature recovery, so it caps accepted posts rather than work
-  done. There is no per-IP limit, no connection cap, and no request timeout.
+  signature and writes an acceptance row regardless (`src/entry/entry.mjs`);
+  and `/v1/oracle/proofs` is guarded only by a single shared static bearer token
+  while streaming up to 250 MB to local disk.
+
+  The address on an acceptance is now required to be `0x` followed by 40 hex
+  characters, so the row names an account that could exist and the key cannot be
+  60 KB of arbitrary text. **How many well-formed addresses one caller may write
+  is still unbounded**, and that matters because `terms_acceptance` shares
+  `room.db` with the Session Event Log, the chat audit and the gate's permit
+  nonce — none of which is rebuildable. Bounding it belongs at ingress or in a
+  service-wide write ceiling, and neither exists yet.
+
+  Two read paths are unauthenticated and worth naming rather than leaving to be
+  discovered: `GET /v1/oracle/proofs/{id}/video` serves evidence with Range
+  support, up to the per-proof cap per request, above the allowlist gate; and
+  `GET /v1/portfolio/{account}` turns one anonymous request into chain RPC
+  calls. Both are deliberate — evidence must be public for a challenge to be
+  meaningful — and both are amplification an operator should rate-limit.
+
+  The only rate limiting anywhere in the service is chat's per-address in-memory
+  window (`src/edge/edge.mjs`), which additionally runs *after* signature
+  recovery, so it caps accepted posts rather than work done. There is no per-IP
+  limit and no connection cap. There *are* request timeouts, contrary to what
+  this file said before: Node's defaults apply — 300 s for a request, 60 s for
+  headers — because nothing here overrides them. A body no route reads is
+  drained at line rate for that whole 300 s.
+
   Treat an internet-facing deployment as requiring its own ingress controls
-  until that changes. Everything else is unauthenticated apart from the interface
+  until that changes. A per-IP limit in this process would be theatre today in
+  any case: the API binds `127.0.0.1`, so behind a proxy every socket carries
+  the proxy's address, and the limit belongs in the proxy. Everything else is unauthenticated apart from the interface
   allowlist and chat signatures. It answers `access-control-allow-origin: *`
   because everything it serves is either public chain data or an explanation of
   what this deployment lacks. It holds no chain key and cannot submit a
