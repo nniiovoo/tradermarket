@@ -1,5 +1,7 @@
 # TraderMarket livestream prediction MVP
 
+[![CI](https://github.com/nniiovoo/tradermarket/actions/workflows/ci.yml/badge.svg)](https://github.com/nniiovoo/tradermarket/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 TraderMarket is a two-outcome livestream prediction market for Polygon PoS Amoy. It uses one community-funded fixed-product market maker per market, and a Live Room publishes many of them over one livestream — a headline market plus micro markets, each its own FPMM clone with its own reserves, LP shares, fees and resolution, bounded by the room's `maxOpenSlots`. For each one: anyone except the participants, their reward wallets, the source gate, resolvers, and disclosed insiders may provide test-USDC liquidity and earn the 0.3% LP fee.
 
 This repository contains a working local web app and a tested, deployable testnet contract system. It has **not** been broadcast to Polygon Amoy because this workspace does not contain a funded deployment signer or the participant, gate, and resolver addresses. It must not be presented as publicly deployed until those addresses are configured and the deployment transactions are confirmed.
